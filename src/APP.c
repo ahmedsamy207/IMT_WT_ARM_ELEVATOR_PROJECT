@@ -102,7 +102,7 @@ void App_Init(void)
 	NVIC_vEnable(6);
 	/* Enable Systick Interrupt */
 	MSYSYTICK_voidCtrlIntState(SYSTICKEnable);
-	CurrentFloor = 1;
+	CurrentFloor = GROUND;
 	HTFT_vDisplay(u16Image_1);
 }
 
@@ -111,88 +111,91 @@ void voidPlay(void)
 	switch (u8Data)
 	{
 	case 12:
-		OrderedFloor = 1;
+		OrderedFloor = GROUND;
 		if(CurrentFloor > OrderedFloor)
 		{
-			ReachValue = 1;
+			ReachValue = ONGOING;
+			/*LED Matrix display DIR Arrow*/
 			TIM3_voidSetIntervalPeriodic(40000, LEDMatrix_DOWN);
+			/*Elevator Motor turned on CW*/
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_HIGH);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_LOW);
+			/*DAC turned on*/
 			R2RDAC_SetData(elevator_raw,68174);
-			ReachValue = 2;
+			ReachValue = REACHED;
+			/*TFT Display floor photo*/
 			HTFT_vDisplay(u16Image_1);
+			/*Elevator Motor turned off*/
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_LOW);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_LOW);
-			CurrentFloor = 1;
+			CurrentFloor = GROUND;
 		}
 		else
 		{
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_LOW);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_LOW);
-			ReachValue = 2;
 			HTFT_vDisplay(u16Image_1);
-			CurrentFloor = 1;
+			CurrentFloor = GROUND;
 		}
 		break;
 	case 24:
-		OrderedFloor = 2;
+		OrderedFloor = FLOOR_1ST;
 		if(CurrentFloor > OrderedFloor)
 		{
-			ReachValue = 1;
+			ReachValue = ONGOING;
 			TIM3_voidSetIntervalPeriodic(40000, LEDMatrix_DOWN);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_HIGH);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_LOW);
 			R2RDAC_SetData(elevator_raw,68174);
-			ReachValue = 2;
+			ReachValue = REACHED;
 			HTFT_vDisplay(u16Image_2);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_LOW);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_LOW);
-			CurrentFloor = 2;
+			CurrentFloor = FLOOR_1ST;
 		}
 		else if(CurrentFloor < OrderedFloor)
 		{
-			ReachValue = 1;
+			ReachValue = ONGOING;
 			TIM3_voidSetIntervalPeriodic(40000, LEDMatrix_UP);
+			/*Elevator Motor turned on CCW*/
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_LOW);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_HIGH);
 			R2RDAC_SetData(elevator_raw,68174);
-			ReachValue = 2;
+			ReachValue = REACHED;
 			HTFT_vDisplay(u16Image_2);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_LOW);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_LOW);
-			CurrentFloor = 2;
+			CurrentFloor = FLOOR_1ST;
 		}
 		else
 		{
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_LOW);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_LOW);
-			ReachValue = 2;
 			HTFT_vDisplay(u16Image_2);
-			CurrentFloor = 2;
+			CurrentFloor = FLOOR_1ST;
 		}
 		break;
 	case 94:
-		OrderedFloor = 3;
+		OrderedFloor = FLOOR_2ND;
 		if(CurrentFloor < OrderedFloor)
 		{
-			ReachValue = 1;
+			ReachValue = ONGOING;
 			TIM3_voidSetIntervalPeriodic(40000, LEDMatrix_UP);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_LOW);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_HIGH);
 			R2RDAC_SetData(elevator_raw,68174);
-			ReachValue = 2;
+			ReachValue = REACHED;
 			HTFT_vDisplay(u16Image_3);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_LOW);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_LOW);
-			CurrentFloor = 3;
+			CurrentFloor = FLOOR_2ND;
 		}
 		else
 		{
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_1,GPIO_LOW);
 			MGPIO_VOIDWritePin(PORT_A,GPIO_PIN_NUM_2,GPIO_LOW);
-			ReachValue = 2;
 			HTFT_vDisplay(u16Image_3);
-			CurrentFloor = 3;
+			CurrentFloor = FLOOR_2ND;
 		}
 		break ;
 	}
@@ -263,7 +266,7 @@ void voidGetFrame(void)
 void LEDMatrix_UP(void)
 {
 	//UP ARROW
-	if(ReachValue == 1)
+	if(ReachValue == ONGOING)
 	{
 		S2P_vSendData(0xFE08);
 		TIM2_voidSetBusyWait(1);
@@ -282,7 +285,7 @@ void LEDMatrix_UP(void)
 		S2P_vSendData(0x7F08);
 		TIM2_voidSetBusyWait(1);
 	}
-	else if(ReachValue == 2)
+	else if(ReachValue == REACHED)
 	{
 		S2P_vSendData(0x0000);
 	}
@@ -291,7 +294,7 @@ void LEDMatrix_UP(void)
 void LEDMatrix_DOWN(void)
 {
 	//Down Arrow
-	if(ReachValue == 1)
+	if(ReachValue == ONGOING)
 	{
 		S2P_vSendData(0xFE10);
 		TIM2_voidSetBusyWait(1);
@@ -310,7 +313,7 @@ void LEDMatrix_DOWN(void)
 		S2P_vSendData(0x7F10);
 		TIM2_voidSetBusyWait(1);
 	}
-	else if(ReachValue == 2)
+	else if(ReachValue == REACHED)
 	{
 		S2P_vSendData(0x0000);
 	}
